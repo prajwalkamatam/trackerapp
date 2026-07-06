@@ -1,0 +1,61 @@
+{
+  "theme": "dark",
+  "archetype": "Tactical / Field Ops (Variant of Performance Pro & Swiss Brutalist)",
+  "colors": {
+    "background": "#09090B",
+    "surface": "#18181B",
+    "border": "#27272A",
+    "text_primary": "#F4F4F5",
+    "text_secondary": "#A1A1AA",
+    "primary": "#F59E0B",
+    "primary_hover": "#D97706",
+    "danger": "#EF4444",
+    "success": "#10B981"
+  },
+  "typography": {
+    "heading_font": "Chivo",
+    "body_font": "JetBrains Mono",
+    "font_install_instructions": "Add Google Fonts imports for Chivo and JetBrains Mono.",
+    "rules": {
+      "headings": "Use tight letter spacing (tracking-tight or tracking-tighter). Avoid default bold; use varying weights. Max size text-6xl for Hero.",
+      "body": "Use JetBrains Mono for all data points, coordinates, logs, and body text to enforce the terminal/navigation instrument feel.",
+      "labels": "Overlines and labels MUST be uppercase, tiny, and wide spacing (tracking-[0.2em])."
+    }
+  },
+  "spacing_and_layout": {
+    "general": "Mobile-first responsive. Use generous spacing (p-8, p-12) for landing page. Dense, strict grid hierarchy for dashboard.",
+    "dashboard_grid": "Mode B: Control Room Grid. Use grid-cols-1 md:grid-cols-4. Gap-4. Every pixel must be utilized. Use h-full on children.",
+    "borders_and_surfaces": "Sharp edges (rounded-none). Cardless or 1px solid borders (border-zinc-800). Flat surfaces. No glassmorphism in dashboard to prevent visual refraction of data."
+  },
+  "components": {
+    "general": "Use pure HTML/Tailwind for marketing layout. Use Shadcn UI for complex interactive logic.",
+    "customization": "Override Shadcn default radiuses to rounded-none. Use JetBrains Mono in input fields and tables.",
+    "map": "Leaflet with OpenStreetMap. IMPORTANT: Use a dark tile layer (e.g., CartoDB Dark Matter) if available. Draw trail history with neon amber polyline. Geofences with translucent red/amber fills.",
+    "buttons": "Square edges, high contrast. Only use Primary (Amber) for main CTAs. Hover states must explicitly set text color (e.g., hover:bg-amber-600 hover:text-black)."
+  },
+  "motion_and_interactions": {
+    "general": "Minimalist animations. Micro-interactions for feedback (e.g., status pinging).",
+    "hover": "Explicitly set text color on hover. Focus states must have higher contrast.",
+    "accessibility": "Respect prefers-reduced-motion. Provide sufficient contrast for all text."
+  },
+  "media": {
+    "hero_image": "https://images.pexels.com/photos/10233033/pexels-photo-10233033.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "hero_image_description": "Lone adventurer shining a flashlight in a dark forest at night - evokes field ops and exploration. Use bg-black/40 overlay.",
+    "radar_image": "https://images.pexels.com/photos/12297608/pexels-photo-12297608.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "radar_image_description": "Gigantic metal satellite dish structure - evokes device pairing and signals."
+  },
+  "icons": {
+    "library": "lucide-react",
+    "instructions": "Use Lucide React (already installed) for consistent, technical line-art icons. Use size 16 or 20 for data rows."
+  },
+  "testing": {
+    "attributes": "All interactive and key informational elements MUST include data-testid (e.g., data-testid='start-tracking-btn', data-testid='device-status')."
+  },
+  "pages": {
+    "landing": "Hero section with large Chivo heading, hero_image with max bg-black/50 overlay. 'Editorial Ribbon' or tech specs marquee. CTAs to Dashboard and Tracker Web App.",
+    "dashboard": "Tactical dark UI. Main area: Leaflet map. Side panel: List of active devices, live speed/altitude/battery metrics, geofence alerts log. Polyline for trails.",
+    "device_management": "Grid/Table of devices. Form to pair new device using 6-char code. Status indicators (Green for online, Red for offline).",
+    "tracker_mobile": "Mobile-first view for the old phone. Big 'Broadcasting...' status card. Input for 6-char code. Start/Stop toggle button. Uses Geolocation API.",
+    "geofence_manager": "Map interface to drop center points and drag radius. Sidebar list of geofences with toggle switches for alerts."
+  }
+}
