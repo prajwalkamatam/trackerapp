@@ -1,0 +1,43 @@
+{
+  "summary": "Backend all endpoints working (health, device CRUD, code lookup case-insensitive, location ingest, track, geofence CRUD, enter/exit event detection, events list, cascading delete). Frontend Landing/Devices/Tracker/Events all pass. Tracker with geolocation permission granted successfully paired and broadcasted location (last-ping shown). Dashboard and Geofences pages both crash with a Leaflet 'Map container is already initialized' runtime error caused by React.StrictMode double-mounting MapContainer without cleanup.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "passed": [
+    "GET /api/ -> 200 {status:ok, service:TrailBeacon}",
+    "POST /api/devices creates device with unique 6-char code",
+    "GET /api/devices lists devices",
+    "GET /api/devices/by-code/{code} case-insensitive (lowercase code returns 200)",
+    "PATCH /api/devices/{id} renames device",
+    "POST /api/devices/by-code/{code}/location ingests point and updates last_* fields",
+    "GET /api/devices/{id}/track returns points sorted ascending",
+    "POST/GET/DELETE /api/geofences work",
+    "Geofence enter/exit event detection fires correctly (exit event verified)",
+    "GET /api/events lists newest first",
+    "DELETE /api/devices/{id} returns 200 and cascades",
+    "Invalid code returns 404",
+    "Landing (/) hero + CTAs render",
+    "Devices (/devices) create/rename/delete flow works via UI",
+    "Tracker (/tracker) pair with valid code shows Paired + Start button; with granted geolocation (48.8583,2.2945), start-btn broadcasts and tracker-last-ping appears",
+    "Events (/events) renders empty state (events-empty testid present)"
+  ],
+  "failed": [
+    {
+      "area": "Frontend /dashboard",
+      "issue": "Runtime error 'Map container is already initialized.' — Leaflet MapContainer is re-initialized due to React.StrictMode double-mount in dev. Red error overlay covers the page and [data-testid=dashboard-map] never becomes attached.",
+      "evidence": "Screenshot shows Uncaught runtime error overlay: 'Map container is already initialized.' at NewClass._initContainer. Selector wait_for_selector('[data-testid=dashboard-map]', state=attached) times out at 15s.",
+      "priority": "HIGH"
+    },
+    {
+      "area": "Frontend /geofences",
+      "issue": "Same 'Map container is already initialized' error. [data-testid=geofence-map] never attaches, so fence create/toggle/delete UI flow cannot be tested.",
+      "evidence": "Same runtime error overlay reproduced when navigating to /geofences.",
+      "priority": "HIGH"
+    }
+  ],
+  "action_items": [
+    "Fix Leaflet re-init crash on Dashboard and Geofences pages. Options: (a) remove React.StrictMode from /app/frontend/src/index.js, or (b) ensure react-leaflet MapContainer is wrapped so its container ref is properly cleaned up on unmount (e.g., key prop or a state guard, or use useRef with map.remove() on cleanup), or (c) memoize MapContainer so the effect doesn't re-init in StrictMode's double-invoke.",
+    "After fix, retest /dashboard (map + device-list + telemetry-strip + alerts-panel) and /geofences (map click -> fence-submit -> fence-toggle -> fence-delete)."
+  ],
+  "success_rate": {"backend": "100%", "frontend": "67% (4 of 6 pages)"},
+  "retest_needed": true,
+  "full_testing_deferred": true
+}
