@@ -1,22 +1,41 @@
-import { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, Circle, Popup } from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, TileLayer, Marker, Polyline, Circle, Popup, useMap } from "react-leaflet";
 import { listDevices, listGeofences, getTrack, listEvents } from "@/lib/api";
 import { pulseIcon } from "@/lib/leafletIcon";
 import { formatDistanceToNow } from "date-fns";
 import { Battery, Gauge, Mountain, Signal, Clock } from "lucide-react";
 
 const DEFAULT_CENTER = [20, 0];
+const DEFAULT_ZOOM = 2;
+const LIVE_ZOOM = 14;
 
 function fmt(v, digits = 4) {
   if (v === null || v === undefined || Number.isNaN(v)) return "—";
   return Number(v).toFixed(digits);
 }
 
+/**
+ * Only pans/zooms the map the first time a live device appears.
+ * After that the user is free to zoom/pan and we never override it.
+ */
+function InitialViewSetter({ liveCenter }) {
+  const map = useMap();
+  const donePan = useRef(false);
+  useEffect(() => {
+    if (donePan.current) return;
+    if (liveCenter) {
+      map.setView(liveCenter, LIVE_ZOOM, { animate: false });
+      donePan.current = true;
+    }
+  }, [liveCenter, map]);
+  return null;
+}
+
 export default function Dashboard() {
   const [devices, setDevices] = useState([]);
   const [geofences, setGeofences] = useState([]);
   const [events, setEvents] = useState([]);
-  const [tracks, setTracks] = useState({}); // device_id -> [points]
+  const [tracks, setTracks] = useState({});
   const [selected, setSelected] = useState(null);
 
   const refreshAll = async () => {
@@ -25,8 +44,8 @@ export default function Dashboard() {
       setDevices(d);
       setGeofences(g);
       setEvents(e);
-      if (!selected && d.length) setSelected(d[0].id);
-    } catch (err) {
+      setSelected((prev) => prev || (d.length ? d[0].id : null));
+    } catch (_) {
       // silent
     }
   };
@@ -60,16 +79,15 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [devicesKey]);
 
-  const center = useMemo(() => {
+  const liveCenter = useMemo(() => {
     const live = devices.find((d) => d.last_lat != null);
-    return live ? [live.last_lat, live.last_lng] : DEFAULT_CENTER;
+    return live ? [live.last_lat, live.last_lng] : null;
   }, [devices]);
 
   const sel = devices.find((d) => d.id === selected) || null;
 
   return (
     <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-4 p-4 lg:grid-cols-4">
-      {/* Map */}
       <div className="lg:col-span-3">
         <div className="mb-3 flex items-center justify-between">
           <div>
@@ -81,14 +99,11 @@ export default function Dashboard() {
             REFRESH · 4s
           </div>
         </div>
-        <div
-          data-testid="dashboard-map"
-          className="relative h-[70vh] border border-zinc-800"
-        >
+        <div data-testid="dashboard-map" className="relative h-[70vh] border border-zinc-800">
+          {/* MapContainer is mounted ONCE. Never re-mount on state changes. */}
           <MapContainer
-            key={`${center[0]}-${center[1]}`}
-            center={center}
-            zoom={devices.some((d) => d.last_lat != null) ? 13 : 2}
+            center={DEFAULT_CENTER}
+            zoom={DEFAULT_ZOOM}
             className="h-full w-full"
             scrollWheelZoom
           >
@@ -96,6 +111,7 @@ export default function Dashboard() {
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
               attribution='&copy; OpenStreetMap · &copy; CARTO'
             />
+            <InitialViewSetter liveCenter={liveCenter} />
             {devices
               .filter((d) => d.last_lat != null)
               .map((d) => (
@@ -151,7 +167,6 @@ export default function Dashboard() {
           </MapContainer>
         </div>
 
-        {/* Telemetry strip */}
         {sel && (
           <div
             data-testid="telemetry-strip"
@@ -170,7 +185,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Side panel */}
       <aside className="space-y-4 lg:col-span-1">
         <div className="border border-zinc-800">
           <div className="border-b border-zinc-800 bg-zinc-950 px-4 py-2">
@@ -192,19 +206,14 @@ export default function Dashboard() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span
-                      className="h-3 w-3 rounded-full"
-                      style={{ background: d.color || "#F59E0B" }}
-                    />
+                    <span className="h-3 w-3 rounded-full" style={{ background: d.color || "#F59E0B" }} />
                     <div>
                       <div className="text-sm font-bold">{d.name}</div>
                       <div className="text-[10px] text-zinc-500">{d.code}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest">
-                    <span
-                      className={`h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-zinc-600"}`}
-                    />
+                    <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-zinc-600"}`} />
                     {isOnline ? "live" : "offline"}
                   </div>
                 </button>
@@ -218,9 +227,7 @@ export default function Dashboard() {
             <div className="overline">Recent Alerts</div>
           </div>
           <div data-testid="alerts-panel" className="max-h-[35vh] overflow-auto">
-            {events.length === 0 && (
-              <div className="p-4 text-xs text-zinc-500">No geofence events yet.</div>
-            )}
+            {events.length === 0 && <div className="p-4 text-xs text-zinc-500">No geofence events yet.</div>}
             {events.slice(0, 15).map((e) => (
               <div key={e.id} className="border-b border-zinc-900 px-4 py-3 text-xs">
                 <div className="flex items-center justify-between">
@@ -237,8 +244,7 @@ export default function Dashboard() {
                 </div>
                 <div className="mt-2 text-sm">
                   <span className="font-bold">{e.device_name}</span>{" "}
-                  <span className="text-zinc-500">→</span>{" "}
-                  <span>{e.geofence_name}</span>
+                  <span className="text-zinc-500">→</span> <span>{e.geofence_name}</span>
                 </div>
               </div>
             ))}
@@ -256,9 +262,7 @@ function StatCell({ icon: Icon, label, value, big }) {
         <Icon size={14} className="text-amber-400" />
         <div className="overline">{label}</div>
       </div>
-      <div className={`mt-2 font-mono ${big ? "text-base font-bold" : "text-sm"} truncate`}>
-        {value}
-      </div>
+      <div className={`mt-2 font-mono ${big ? "text-base font-bold" : "text-sm"} truncate`}>{value}</div>
     </div>
   );
 }

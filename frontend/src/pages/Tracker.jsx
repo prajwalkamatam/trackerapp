@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Play, Square, MapPin, Battery, Gauge, Mountain, Radio } from "lucide-react";
-import { getDeviceByCode, postLocation } from "@/lib/api";
+import { getDevicePublic, postLocation } from "@/lib/api";
 
 export default function Tracker() {
   const { code: routeCode } = useParams();
@@ -25,7 +25,7 @@ export default function Tracker() {
   async function verifyCode(c) {
     setError("");
     try {
-      const d = await getDeviceByCode(c);
+      const d = await getDevicePublic(c);
       setDevice(d);
       toast.success(`Paired: ${d.name}`);
     } catch (e) {
